@@ -17,6 +17,11 @@ import com.discord.stores.StoreStream
 import com.discord.utilities.spotify.SpotifyApiClient
 import rx.Subscriber
 import java.util.*
+import javax.ws.rs.client.Client
+import javax.ws.rs.client.ClientBuilder
+import javax.ws.rs.client.Entity
+import javax.ws.rs.core.Response
+import javax.ws.rs.core.MediaType
 
 @AliucordPlugin
 class Lyrics : Plugin() {
@@ -54,7 +59,6 @@ class Lyrics : Plugin() {
                         it.get(storeSpotify) as SpotifyApiClient
                     }
 
-                //This sucks so much
                 spotifyApiClient.spotifyTrack.subscribe(
                     object : Subscriber<ModelSpotifyTrack?>() {
                         override fun onCompleted() {}
@@ -70,8 +74,6 @@ class Lyrics : Plugin() {
                 )
             }
 
-            //don't fetch anything until songName is not null
-            @Suppress("ControlFlowWithEmptyBody")
             while (songName == null) {}
 
             if (songName == "") {
@@ -123,8 +125,27 @@ class Lyrics : Plugin() {
         }
         val artist = songParts[0]
         val title = songParts.drop(1).joinToString(" ")
-        val responseModel = Http.simpleJsonGet("$baseUrl$artist/$title", ResponseModel::class.java) as ResponseModel
-        return Data(artist, title, responseModel.lyrics, "https://lyrics.ovh", "", "")
-    }
 
+        val client = ClientBuilder.newClient()
+        val response = client.target("$baseUrl$artist/$title")
+            .request(MediaType.APPLICATION_JSON_TYPE)
+            .get()
+
+        if (response.status != 200) {
+            throw IllegalStateException("Failed to fetch lyrics: ${response.status}")
+        }
+
+        val responseBody = response.readEntity(String::class.java)
+        val responseModel = Http.simpleJsonGet(responseBody, ResponseModel::class.java) as ResponseModel
+        val lyrics = responseModel.data.firstOrNull()?.lyrics ?: throw IllegalStateException("No lyrics found")
+
+        return Data(
+            lyrics = lyrics,
+            artist = artist,
+            album_year = "",  // Add appropriate value
+            album_art = "",   // Add appropriate value
+            name = title,
+            url = "https://lyrics.ovh"
+        )
+    }
 }
