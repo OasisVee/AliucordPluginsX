@@ -17,6 +17,8 @@ import com.discord.stores.StoreStream
 import com.discord.utilities.spotify.SpotifyApiClient
 import rx.Subscriber
 import java.util.*
+import javax.ws.rs.client.ClientBuilder
+import javax.ws.rs.core.MediaType
 
 @AliucordPlugin
 class Lyrics : Plugin() {
@@ -120,15 +122,11 @@ class Lyrics : Plugin() {
         }
         val artist = songParts[0]
         val title = songParts.drop(1).joinToString(" ")
-
+        
         val client = ClientBuilder.newClient()
         val response = client.target("$baseUrl$artist/$title")
             .request(MediaType.APPLICATION_JSON_TYPE)
             .get()
-
-        if (response.status != 200) {
-            throw IllegalStateException("Failed to fetch lyrics: ${response.status}")
-        }
 
         val responseBody = response.readEntity(String::class.java)
         val responseModel = Http.simpleJsonGet(responseBody, ResponseModel::class.java) as ResponseModel
