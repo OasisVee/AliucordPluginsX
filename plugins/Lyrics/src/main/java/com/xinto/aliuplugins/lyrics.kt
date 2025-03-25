@@ -17,11 +17,6 @@ import com.discord.stores.StoreStream
 import com.discord.utilities.spotify.SpotifyApiClient
 import rx.Subscriber
 import java.util.*
-import javax.ws.rs.client.Client
-import javax.ws.rs.client.ClientBuilder
-import javax.ws.rs.client.Entity
-import javax.ws.rs.core.Response
-import javax.ws.rs.core.MediaType
 
 @AliucordPlugin
 class Lyrics : Plugin() {
